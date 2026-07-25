@@ -122,6 +122,7 @@ const techStacks = [
   { icon: "nextjs.svg", language: "Next.js" },
   { icon: "express.svg", language: "Express.js" },
   { icon: "postgresql.svg", language: "PostgreSQL" },
+  { icon: "redis.svg", language: "Redis" },
 ];
 
 export default function FullWidthTabs() {

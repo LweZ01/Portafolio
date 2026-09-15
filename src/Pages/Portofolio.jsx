@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 
-import { supabase } from "../supabase"; 
+import { supabase } from "../supabase";
 
 import PropTypes from "prop-types";
 import SwipeableViews from "react-swipeable-views";
@@ -102,6 +102,25 @@ function a11yProps(index) {
   };
 }
 
+// Skeleton para las tarjetas de proyectos mientras carga
+const ProjectSkeleton = () => (
+  <div className="animate-pulse bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+    <div className="w-full h-40 bg-white/10" />
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-white/10 rounded w-3/4" />
+      <div className="h-3 bg-white/10 rounded w-full" />
+      <div className="h-3 bg-white/10 rounded w-5/6" />
+    </div>
+  </div>
+);
+
+// Skeleton para las tarjetas de certificados mientras carga
+const CertificateSkeleton = () => (
+  <div className="animate-pulse bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+    <div className="w-full h-32 bg-white/10" />
+  </div>
+);
+
 // Stack tecnico  
 const techStacks = [
   { icon: "html.svg", language: "HTML" },
@@ -131,6 +150,7 @@ export default function FullWidthTabs() {
   const [certificates, setCertificates] = useState([]);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllCertificates, setShowAllCertificates] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const isMobile = window.innerWidth < 768;
   const initialItems = isMobile ? 4 : 6;
 
@@ -139,6 +159,16 @@ export default function FullWidthTabs() {
       once: false,
     });
   }, []);
+
+  // FIX: AOS escanea el DOM una sola vez al montar, cuando projects/certificates
+  // todavía están vacíos. Cuando Supabase responde y React pinta las tarjetas,
+  // AOS ya no las detecta y se quedan invisibles hasta que se recarga la página.
+  // refreshHard() vuelve a escanear el DOM completo cada vez que llegan datos nuevos.
+  useEffect(() => {
+    if (!isLoading) {
+      AOS.refreshHard();
+    }
+  }, [projects, certificates, isLoading]);
 
 
   const fetchData = useCallback(async () => {
@@ -165,6 +195,8 @@ export default function FullWidthTabs() {
       localStorage.setItem("certificates", JSON.stringify(certificateData));
     } catch (error) {
       console.error("Error fetching data from Supabase:", error.message);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -178,6 +210,7 @@ export default function FullWidthTabs() {
     if (cachedProjects && cachedCertificates) {
         setProjects(JSON.parse(cachedProjects));
         setCertificates(JSON.parse(cachedCertificates));
+        setIsLoading(false); // ya hay algo que mostrar, quita el skeleton
     }
     
     fetchData(); // Sigue llamando a fetchData para sincronizar los datos más recientes.
@@ -314,25 +347,29 @@ export default function FullWidthTabs() {
         >
           <TabPanel value={value} index={0} dir={theme.direction}>
             <div className="container mx-auto flex justify-center items-center overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
-                {displayedProjects.map((project, index) => (
-                  <div
-                    key={project.id || index}
-                    data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                    data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                  >
-                    <CardProject
-                      Img={project.Img}
-                      Title={project.Title}
-                      Description={project.Description}
-                      Link={project.Link}
-                      id={project.id}
-                    />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-5 w-full">
+                {isLoading
+                  ? Array.from({ length: initialItems }).map((_, index) => (
+                      <ProjectSkeleton key={`project-skeleton-${index}`} />
+                    ))
+                  : displayedProjects.map((project, index) => (
+                      <div
+                        key={project.id || index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <CardProject
+                          Img={project.Img}
+                          Title={project.Title}
+                          Description={project.Description}
+                          Link={project.Link}
+                          id={project.id}
+                        />
+                      </div>
+                    ))}
               </div>
             </div>
-            {projects.length > initialItems && (
+            {!isLoading && projects.length > initialItems && (
               <div className="mt-6 w-full flex justify-start">
                 <ToggleButton
                   onClick={() => toggleShowMore('projects')}
@@ -344,19 +381,23 @@ export default function FullWidthTabs() {
 
           <TabPanel value={value} index={1} dir={theme.direction}>
             <div className="container mx-auto flex justify-center items-center overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4">
-                {displayedCertificates.map((certificate, index) => (
-                  <div
-                    key={certificate.id || index}
-                    data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                    data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                  >
-                    <Certificate ImgSertif={certificate.Img} />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4 w-full">
+                {isLoading
+                  ? Array.from({ length: initialItems }).map((_, index) => (
+                      <CertificateSkeleton key={`certificate-skeleton-${index}`} />
+                    ))
+                  : displayedCertificates.map((certificate, index) => (
+                      <div
+                        key={certificate.id || index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <Certificate ImgSertif={certificate.Img} />
+                      </div>
+                    ))}
               </div>
             </div>
-            {certificates.length > initialItems && (
+            {!isLoading && certificates.length > initialItems && (
               <div className="mt-6 w-full flex justify-start">
                 <ToggleButton
                   onClick={() => toggleShowMore('certificates')}

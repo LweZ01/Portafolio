@@ -193,6 +193,11 @@ export default function FullWidthTabs() {
       // Almacenar en localStorage (esta funcionalidad se mantiene)
       localStorage.setItem("projects", JSON.stringify(projectData));
       localStorage.setItem("certificates", JSON.stringify(certificateData));
+
+      // Avisar a otros componentes (ej. AboutPage) que ya hay datos frescos.
+      // El evento nativo "storage" no se dispara en la misma pestaña, así que
+      // usamos uno personalizado.
+      window.dispatchEvent(new Event("portfolio-data-updated"));
     } catch (error) {
       console.error("Error fetching data from Supabase:", error.message);
     } finally {

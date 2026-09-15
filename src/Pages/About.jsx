@@ -1,4 +1,4 @@
-import React, { useEffect, memo, useMemo } from "react"
+import React, { useEffect, useState, memo, useMemo } from "react"
 import { FileText, Code, Award, Globe, ArrowUpRight, Sparkles, UserCheck } from "lucide-react"
 import AOS from 'aos'
 import 'aos/dist/aos.css'
@@ -112,22 +112,44 @@ const StatCard = memo(({ icon: Icon, color, value, label, description, animation
   </div>
 ));
 
+// Lee projects/certificates de localStorage. Se llama al montar y cada vez
+// que llega el evento "portfolio-data-updated" disparado desde FullWidthTabs.
+const readCountsFromStorage = () => {
+  const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
+  const storedCertificates = JSON.parse(localStorage.getItem("certificates") || "[]");
+  return {
+    totalProjects: storedProjects.length,
+    totalCertificates: storedCertificates.length,
+  };
+};
+
 const AboutPage = () => {
-  // Memoized calculations
-  const { totalProjects, totalCertificates, YearExperience } = useMemo(() => {
-    const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
-    const storedCertificates = JSON.parse(localStorage.getItem("certificates") || "[]");
-    
+  // FIX: antes esto era un useMemo con [] como dependencia, así que calculaba
+  // los conteos UNA sola vez al montar. La primera vez que un usuario entra
+  // (sin localStorage previo) esto daba 0 y 0 para siempre, aunque el fetch a
+  // Supabase en el otro componente terminara segundos después.
+  // Ahora usamos estado + un listener del evento "portfolio-data-updated" que
+  // FullWidthTabs dispara cuando termina de guardar los datos frescos.
+  const [counts, setCounts] = useState(() => readCountsFromStorage());
+
+  useEffect(() => {
+    const handleDataUpdated = () => {
+      setCounts(readCountsFromStorage());
+    };
+
+    window.addEventListener("portfolio-data-updated", handleDataUpdated);
+    return () => {
+      window.removeEventListener("portfolio-data-updated", handleDataUpdated);
+    };
+  }, []);
+
+  const { totalProjects, totalCertificates } = counts;
+
+  const YearExperience = useMemo(() => {
     const startDate = new Date("2024-11-06");
     const today = new Date();
-    const experience = today.getFullYear() - startDate.getFullYear() -
+    return today.getFullYear() - startDate.getFullYear() -
       (today < new Date(today.getFullYear(), startDate.getMonth(), startDate.getDate()) ? 1 : 0);
-
-    return {
-      totalProjects: storedProjects.length,
-      totalCertificates: storedCertificates.length,
-      YearExperience: experience
-    };
   }, []);
 
   // Optimized AOS initialization
@@ -153,6 +175,12 @@ const AboutPage = () => {
       clearTimeout(resizeTimer);
     };
   }, []);
+
+  // Cuando cambian los conteos, refresca AOS para que las stat cards
+  // (que ya estaban en el DOM) se re-evalúen si hiciera falta.
+  useEffect(() => {
+    AOS.refresh();
+  }, [totalProjects, totalCertificates]);
 
   // Memoized stats data
   const statsData = useMemo(() => [

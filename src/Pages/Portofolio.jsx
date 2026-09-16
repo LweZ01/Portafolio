@@ -126,20 +126,20 @@ const techStacks = [
   { icon: "html.svg", language: "HTML" },
   { icon: "css.svg", language: "CSS" },
   { icon: "javascript.svg", language: "JavaScript" },
-  { icon: "java.svg", language: "Java" },
-  { icon: "python.svg", language: "Python" },
+  { icon: "tailwind.svg", language: "Tailwind CSS" },
   { icon: "reactjs.svg", language: "ReactJS" },
+  { icon: "vite.svg", language: "Vite" },
   { icon: "nodejs.svg", language: "Node JS" },
-  { icon: "nestjs.svg", language: "Nest JS" },
-  { icon: "springboot.svg", language: "Spring Boot"},
+  { icon: "bootstrap.svg", language: "Bootstrap" },
   { icon: "firebase.svg", language: "Firebase" },
   { icon: "vercel.svg", language: "Vercel" },
+  { icon: "SweetAlert.svg", language: "SweetAlert2" },
   { icon: "typescript.svg", language: "TypeScript" },
   { icon: "git.svg", language: "Git" },
   { icon: "github.svg", language: "GitHub" },
-  { icon: "express.svg", language: "Express JS" },
+  { icon: "nextjs.svg", language: "Next.js" },
+  { icon: "express.svg", language: "Express.js" },
   { icon: "postgresql.svg", language: "PostgreSQL" },
-  { icon: "docker.svg", language: "Docker" },
   { icon: "redis.svg", language: "Redis" },
 ];
 
@@ -154,16 +154,6 @@ export default function FullWidthTabs() {
   const isMobile = window.innerWidth < 768;
   const initialItems = isMobile ? 4 : 6;
 
-  useEffect(() => {
-    AOS.init({
-      once: false,
-    });
-  }, []);
-
-  // FIX: AOS escanea el DOM una sola vez al montar, cuando projects/certificates
-  // todavía están vacíos. Cuando Supabase responde y React pinta las tarjetas,
-  // AOS ya no las detecta y se quedan invisibles hasta que se recarga la página.
-  // refreshHard() vuelve a escanear el DOM completo cada vez que llegan datos nuevos.
   useEffect(() => {
     if (!isLoading) {
       AOS.refreshHard();

@@ -112,8 +112,6 @@ const StatCard = memo(({ icon: Icon, color, value, label, description, animation
   </div>
 ));
 
-// Lee projects/certificates de localStorage. Se llama al montar y cada vez
-// que llega el evento "portfolio-data-updated" disparado desde FullWidthTabs.
 const readCountsFromStorage = () => {
   const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
   const storedCertificates = JSON.parse(localStorage.getItem("certificates") || "[]");
@@ -124,12 +122,7 @@ const readCountsFromStorage = () => {
 };
 
 const AboutPage = () => {
-  // FIX: antes esto era un useMemo con [] como dependencia, así que calculaba
-  // los conteos UNA sola vez al montar. La primera vez que un usuario entra
-  // (sin localStorage previo) esto daba 0 y 0 para siempre, aunque el fetch a
-  // Supabase en el otro componente terminara segundos después.
-  // Ahora usamos estado + un listener del evento "portfolio-data-updated" que
-  // FullWidthTabs dispara cuando termina de guardar los datos frescos.
+
   const [counts, setCounts] = useState(() => readCountsFromStorage());
 
   useEffect(() => {
@@ -152,32 +145,6 @@ const AboutPage = () => {
       (today < new Date(today.getFullYear(), startDate.getMonth(), startDate.getDate()) ? 1 : 0);
   }, []);
 
-  // Optimized AOS initialization
-  useEffect(() => {
-    const initAOS = () => {
-      AOS.init({
-        once: false, 
-      });
-    };
-
-    initAOS();
-    
-    // Debounced resize handler
-    let resizeTimer;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(initAOS, 250);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(resizeTimer);
-    };
-  }, []);
-
-  // Cuando cambian los conteos, refresca AOS para que las stat cards
-  // (que ya estaban en el DOM) se re-evalúen si hiciera falta.
   useEffect(() => {
     AOS.refresh();
   }, [totalProjects, totalCertificates]);

@@ -10,11 +10,6 @@ const AnimatedBackground = () => {
 	]
 
 	useEffect(() => {
-		// FIX: en móviles de gama media/baja, blur(128px) animado en 4 capas
-		// fixed es de lo más caro que existe en CSS. Si el usuario prefiere
-		// menos movimiento, o si la pantalla es pequeña, no animamos por scroll:
-		// los blobs quedan estáticos en su posición inicial (se ven igual,
-		// solo no se mueven).
 		const prefersReducedMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)"
 		).matches;
@@ -24,11 +19,6 @@ const AnimatedBackground = () => {
 			return;
 		}
 
-		// FIX: antes había dos fuentes de animación pisándose (el evento
-		// "scroll" y un requestAnimationFrame que se retroalimentaba solo),
-		// más una CSS transition de 1.4s que se reiniciaba en cada frame.
-		// Ahora: un solo rAF-loop, sin transition CSS, leyendo el scroll una
-		// vez por frame como máximo.
 		let ticking = false;
 		let latestScroll = window.pageYOffset;
 		let rafId = null;
@@ -43,11 +33,6 @@ const AnimatedBackground = () => {
 
 				const x = initialPos.x + xOffset;
 				const y = initialPos.y + yOffset;
-
-				// Sin `transition` en JS: dejamos que sea el propio rAF (que
-				// corre a la cadencia del refresco de pantalla) el que dé la
-				// sensación de movimiento suave, sin relanzar transiciones
-				// CSS superpuestas.
 				blob.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 			});
 			ticking = false;

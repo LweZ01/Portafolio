@@ -137,9 +137,9 @@ const techStacks = [
   { icon: "typescript.svg", language: "TypeScript" },
   { icon: "git.svg", language: "Git" },
   { icon: "github.svg", language: "GitHub" },
-  { icon: "docker.svg", language: "Docker" },
   { icon: "express.svg", language: "Express JS" },
   { icon: "postgresql.svg", language: "PostgreSQL" },
+  { icon: "docker.svg", language: "Docker" },
   { icon: "redis.svg", language: "Redis" },
 ];
 

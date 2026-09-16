@@ -211,8 +211,12 @@ const Home = () => {
                     cuadro a cuadro por CPU antes de poder mostrarlo — esto
                     era el principal responsable de la demora al renderizar
                     efectos, sobre todo en móvil. Un <video> en loop usa
-                    decodificación acelerada por hardware y pesa ~110KB.
-                    poster muestra un frame estático mientras carga el video.
+                    decodificación acelerada por hardware y pesa ~330KB, con
+                    transparencia real (alpha) igual que el GIF original.
+                    El <img> dentro de <video> solo se usa como fallback en
+                    navegadores muy antiguos que no soporten <video> o WebM
+                    con alpha — en ese caso raro sí se paga el peso del GIF,
+                    pero la inmensa mayoría de usuarios nunca lo descarga.
                   */}
                   <video
                     className={`w-full h-full object-contain transition-all duration-500 ${
@@ -228,7 +232,11 @@ const Home = () => {
                     aria-label="Developer Animation"
                   >
                     <source src="/Animation1.webm" type="video/webm" />
-                    <source src="/Animation1.mp4" type="video/mp4" />
+                    <img
+                      src="/Animation1.gif"
+                      alt="Developer Animation"
+                      className="w-full h-full object-contain"
+                    />
                   </video>
                 </div>
 

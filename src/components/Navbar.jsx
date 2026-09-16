@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState("Home");
-    
+
     const navItems = [
         { href: "#Home", label: "Home" },
         { href: "#About", label: "About" },
@@ -13,35 +13,70 @@ const Navbar = () => {
         { href: "#Contact", label: "Contact" },
     ];
 
+    const sectionsRef = useRef([]);
+
     useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
-            const sections = navItems.map(item => {
-                const section = document.querySelector(item.href);
-                if (section) {
+        // Cachear los elementos de sección y sus medidas una sola vez al
+        // montar (y se pueden recalcular en resize si el layout cambia).
+        const measureSections = () => {
+            sectionsRef.current = navItems
+                .map((item) => {
+                    const section = document.querySelector(item.href);
+                    if (!section) return null;
                     return {
                         id: item.href.replace("#", ""),
                         offset: section.offsetTop - 550,
-                        height: section.offsetHeight
+                        height: section.offsetHeight,
                     };
-                }
-                return null;
-            }).filter(Boolean);
+                })
+                .filter(Boolean);
+        };
 
+        measureSections();
+
+        let ticking = false;
+
+        const updateActiveSection = () => {
             const currentPosition = window.scrollY;
-            const active = sections.find(section => 
-                currentPosition >= section.offset && 
-                currentPosition < section.offset + section.height
+            setScrolled(currentPosition > 20);
+
+            const active = sectionsRef.current.find(
+                (section) =>
+                    currentPosition >= section.offset &&
+                    currentPosition < section.offset + section.height
             );
 
             if (active) {
                 setActiveSection(active.id);
             }
+            ticking = false;
         };
 
-        window.addEventListener("scroll", handleScroll);
+        const handleScroll = () => {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(updateActiveSection);
+            }
+        };
+
+        // Recalcular medidas si la ventana cambia de tamaño (las secciones
+        // pueden cambiar de alto, por ejemplo al pasar de layout mobile a
+        // desktop).
+        let resizeTimer;
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(measureSections, 250);
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("resize", handleResize);
         handleScroll();
-        return () => window.removeEventListener("scroll", handleScroll);
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleResize);
+            clearTimeout(resizeTimer);
+        };
     }, []);
 
     useEffect(() => {

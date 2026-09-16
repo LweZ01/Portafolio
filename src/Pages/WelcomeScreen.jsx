@@ -48,13 +48,12 @@ const IconButton = ({ Icon }) => (
 const WelcomeScreen = ({ onLoadingComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
 
+  // FIX: WelcomeScreen es el primer componente en montar (antes que
+  // Navbar/AnimatedBackground/Home, etc.), así que su AOS.init() propio
+  // corría primero y quedaba pisado por el de App.jsx apenas un instante
+  // después — la misma clase de conflicto que ya resolvimos en los demás
+  // componentes. AOS.init() ahora vive centralizado en App.jsx.
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: false,
-      mirror: false,
-    });
-
     const timer = setTimeout(() => {
       setIsLoading(false);
       setTimeout(() => {

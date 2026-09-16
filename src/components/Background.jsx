@@ -10,54 +10,79 @@ const AnimatedBackground = () => {
 	]
 
 	useEffect(() => {
-		let currentScroll = 0
-		let requestId
+		// FIX: en móviles de gama media/baja, blur(128px) animado en 4 capas
+		// fixed es de lo más caro que existe en CSS. Si el usuario prefiere
+		// menos movimiento, o si la pantalla es pequeña, no animamos por scroll:
+		// los blobs quedan estáticos en su posición inicial (se ven igual,
+		// solo no se mueven).
+		const prefersReducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)"
+		).matches;
+		const isSmallScreen = window.innerWidth < 768;
+
+		if (prefersReducedMotion || isSmallScreen) {
+			return;
+		}
+
+		// FIX: antes había dos fuentes de animación pisándose (el evento
+		// "scroll" y un requestAnimationFrame que se retroalimentaba solo),
+		// más una CSS transition de 1.4s que se reiniciaba en cada frame.
+		// Ahora: un solo rAF-loop, sin transition CSS, leyendo el scroll una
+		// vez por frame como máximo.
+		let ticking = false;
+		let latestScroll = window.pageYOffset;
+		let rafId = null;
+
+		const applyTransform = () => {
+			blobRefs.current.forEach((blob, index) => {
+				if (!blob) return;
+				const initialPos = initialPositions[index];
+
+				const xOffset = Math.sin(latestScroll / 100 + index * 0.5) * 340;
+				const yOffset = Math.cos(latestScroll / 100 + index * 0.5) * 40;
+
+				const x = initialPos.x + xOffset;
+				const y = initialPos.y + yOffset;
+
+				// Sin `transition` en JS: dejamos que sea el propio rAF (que
+				// corre a la cadencia del refresco de pantalla) el que dé la
+				// sensación de movimiento suave, sin relanzar transiciones
+				// CSS superpuestas.
+				blob.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+			});
+			ticking = false;
+		};
 
 		const handleScroll = () => {
-			const newScroll = window.pageYOffset
-			const scrollDelta = newScroll - currentScroll
-			currentScroll = newScroll
+			latestScroll = window.pageYOffset;
+			if (!ticking) {
+				ticking = true;
+				rafId = requestAnimationFrame(applyTransform);
+			}
+		};
 
-			blobRefs.current.forEach((blob, index) => {
-				const initialPos = initialPositions[index]
-
-				// Calculating movement in both X and Y direction
-				const xOffset = Math.sin(newScroll / 100 + index * 0.5) * 340 // Horizontal movement
-				const yOffset = Math.cos(newScroll / 100 + index * 0.5) * 40 // Vertical movement
-
-				const x = initialPos.x + xOffset
-				const y = initialPos.y + yOffset
-
-				// Apply transformation with smooth transition
-				blob.style.transform = `translate(${x}px, ${y}px)`
-				blob.style.transition = "transform 1.4s ease-out"
-			})
-
-			requestId = requestAnimationFrame(handleScroll)
-		}
-
-		window.addEventListener("scroll", handleScroll)
+		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => {
-			window.removeEventListener("scroll", handleScroll)
-			cancelAnimationFrame(requestId)
-		}
-	}, [])
+			window.removeEventListener("scroll", handleScroll);
+			if (rafId) cancelAnimationFrame(rafId);
+		};
+	}, []);
 
 	return (
 		<div className="fixed inset-0 ">
 			<div className="absolute inset-0">
 				<div
 					ref={(ref) => (blobRefs.current[0] = ref)}
-					className="absolute top-0 -left-4 md:w-96 md:h-96 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 md:opacity-20 "></div>
+					className="absolute top-0 -left-4 md:w-96 md:h-96 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl md:blur-[96px] opacity-40 md:opacity-20 "></div>
 				<div
 					ref={(ref) => (blobRefs.current[1] = ref)}
-					className="absolute top-0 -right-4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 md:opacity-20 hidden sm:block"></div>
+					className="absolute top-0 -right-4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-[96px] opacity-40 md:opacity-20 hidden sm:block"></div>
 				<div
 					ref={(ref) => (blobRefs.current[2] = ref)}
-					className="absolute -bottom-8 left-[-40%] md:left-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 md:opacity-20 "></div>
+					className="absolute -bottom-8 left-[-40%] md:left-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl md:blur-[96px] opacity-40 md:opacity-20 "></div>
 					<div
 					ref={(ref) => (blobRefs.current[3] = ref)}
-					className="absolute -bottom-10 right-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 md:opacity-10 hidden sm:block"></div>
+					className="absolute -bottom-10 right-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[96px] opacity-20 md:opacity-10 hidden sm:block"></div>
 			</div>
 			<div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f10_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f10_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 		</div>
@@ -65,4 +90,3 @@ const AnimatedBackground = () => {
 }
 
 export default AnimatedBackground
-

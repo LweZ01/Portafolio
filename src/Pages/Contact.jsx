@@ -16,11 +16,9 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    AOS.init({
-      once: false,
-    });
-  }, []);
+  // AOS.init() ahora vive centralizado en App.jsx (con lógica once: true en
+  // móvil / once: false en desktop) — ver el FIX ahí, para evitar múltiples
+  // instancias de AOS pisándose entre componentes.
 
   const handleChange = (e) => {
     const { name, value } = e.target;

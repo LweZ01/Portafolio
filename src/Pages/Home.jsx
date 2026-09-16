@@ -91,21 +91,15 @@ const Home = () => {
   const [charIndex, setCharIndex] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
+  const [useGifFallback, setUseGifFallback] = useState(false)
 
-  // Optimize AOS initialization
   useEffect(() => {
-    const initAOS = () => {
-      AOS.init({
-        once: true,
-        offset: 10,
-       
-      });
-    };
-
-    initAOS();
-    window.addEventListener('resize', initAOS);
-    return () => window.removeEventListener('resize', initAOS);
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isSafariDesktop = /^((?!chrome|android).)*safari/i.test(ua);
+    setUseGifFallback(isIOS || isSafariDesktop);
   }, []);
+
 
   useEffect(() => {
     setIsLoaded(true);
@@ -206,38 +200,40 @@ const Home = () => {
                   isHovering ? "scale-105" : "scale-100"
                 }`}>
                   {/*
-                    FIX: Animation1.gif pesaba 6.87MB (1200x1200, 30fps) y el
-                    navegador debía descargarlo completo y decodificarlo
-                    cuadro a cuadro por CPU antes de poder mostrarlo — esto
-                    era el principal responsable de la demora al renderizar
-                    efectos, sobre todo en móvil. Un <video> en loop usa
-                    decodificación acelerada por hardware y pesa ~330KB, con
-                    transparencia real (alpha) igual que el GIF original.
-                    El <img> dentro de <video> solo se usa como fallback en
-                    navegadores muy antiguos que no soporten <video> o WebM
-                    con alpha — en ese caso raro sí se paga el peso del GIF,
-                    pero la inmensa mayoría de usuarios nunca lo descarga.
+
                   */}
-                  <video
-                    className={`w-full h-full object-contain transition-all duration-500 ${
-                      isHovering 
-                        ? "scale-[95%] sm:scale-[90%] md:scale-[90%] lg:scale-[90%] rotate-2" 
-                        : "scale-[90%] sm:scale-[80%] md:scale-[80%] lg:scale-[80%]"
-                    }`}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    aria-label="Developer Animation"
-                  >
-                    <source src="/Animation1.webm" type="video/webm" />
+                  {useGifFallback ? (
                     <img
                       src="/Animation1.gif"
                       alt="Developer Animation"
-                      className="w-full h-full object-contain"
+                      className={`w-full h-full object-contain transition-all duration-500 ${
+                        isHovering 
+                          ? "scale-[95%] sm:scale-[90%] md:scale-[90%] lg:scale-[90%] rotate-2" 
+                          : "scale-[90%] sm:scale-[80%] md:scale-[80%] lg:scale-[80%]"
+                      }`}
                     />
-                  </video>
+                  ) : (
+                    <video
+                      className={`w-full h-full object-contain transition-all duration-500 ${
+                        isHovering 
+                          ? "scale-[95%] sm:scale-[90%] md:scale-[90%] lg:scale-[90%] rotate-2" 
+                          : "scale-[90%] sm:scale-[80%] md:scale-[80%] lg:scale-[80%]"
+                      }`}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="auto"
+                      aria-label="Developer Animation"
+                    >
+                      <source src="/Animation1.webm" type="video/webm" />
+                      <img
+                        src="/Animation1.gif"
+                        alt="Developer Animation"
+                        className="w-full h-full object-contain"
+                      />
+                    </video>
+                  )}
                 </div>
 
                 <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${
